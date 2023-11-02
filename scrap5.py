@@ -1,14 +1,18 @@
 from requests_html import HTMLSession
 from bs4 import BeautifulSoup
 import pandas as pd
+import time
 
 
+#requests, httpx 
+#requests_html, ada limitasi tertentu, scrapy splash
 def access_url(url):
     session = HTMLSession()
     r = session.get(url) #response [200]
-    r.html.render()
+    r.html.render(wait=2, scrolldown = 5, sleep = 2)
     text = r.html.html
-    return text
+    soup = BeautifulSoup(text, "html.parser")
+    return soup
 
 def write_html_file(text):
     with open(f"output.html", "w", encoding="UTF-8") as file:
@@ -20,6 +24,12 @@ def read_html_file(file):
     text = BeautifulSoup(text, "html.parser")
     return text
 
+def read_input_xlsx(filename):
+    datas = pd.read_excel(f"{filename}.xlsx", sheet_name="Sheet1").to_dict(orient='records')
+    urls = []
+    for data in datas:
+        urls.append(data['Target URL'])
+    return urls
 
 def html_parse(html_file): #fungsinya buat apa, for parsing, the output or return value, should be a dictionary. ex = {"title":ÖSTANÖ} dst
     title = html_file.find("div", class_="d-flex flex-row").get_text().strip()
@@ -53,26 +63,26 @@ def html_parse(html_file): #fungsinya buat apa, for parsing, the output or retur
 
 
 if __name__ == "__main__": 
-    url = "https://www.ikea.co.id/in/produk/kursi-makan/kursi-berpelapis/ostano-art-30568901"
-    #for first time running code
-    html_text = access_url(url)
+    urls = read_input_xlsx("input")
+    print(read_input_xlsx("input"))
+    results = []
+    #time.sleep(600)
+    for url in urls:
+        print(f"scraping product page : {url}")
+        #for first time running code
+        html_text = access_url(url)
+        df = html_parse(html_text)
+        results.append(df)
+    print(results)    
 
-    #writing output to a file make easier for testing
-    html_text_to_file = write_html_file(html_text)
-
-    #if you are running second you time can comment code above and run this instead
-    html_file = read_html_file("output.html")
-
-    df = html_parse(html_file)
-    
-    print(df)    
-    """
     #practically still single data no need dataframe
     df = pd.DataFrame(df)
-    df.to_excel("output.xlsx")"""
+    df.to_excel("output.xlsx")
+
+    """
 
 #scraping
-"""
+
 1. deskripsi produk
 2. no. artikel
 3. opsional =Bahan sampai rangka dasar
